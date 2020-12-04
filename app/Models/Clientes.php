@@ -17,4 +17,9 @@ class Clientes extends Model
         'cidade',
         'data_de_nascimento',
     ];
+
+    public function planos()
+    {
+        return $this->belongsToMany(Planos::class);
+    }
 }

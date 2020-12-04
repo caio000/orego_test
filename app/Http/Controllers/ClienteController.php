@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Clientes;
+use App\Models\Planos;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ClienteController extends Controller
 {
@@ -14,7 +17,7 @@ class ClienteController extends Controller
      */
     public function index()
     {
-        return Clientes::simplePaginate(15);
+        return Clientes::with('planos')->simplePaginate(15);
     }
 
     /**
@@ -33,15 +36,28 @@ class ClienteController extends Controller
             'estado' => ['required', 'string'],
             'cidade' => ['required', 'string'],
             'data_de_nascimento' => ['required', 'date_format:d/m/Y'],
+            'plano' => ['required', 'numeric'],
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors()->toArray(), 422);
         }
 
-        $cliente = new Clientes();
-        $cliente->fill($request->all());
-        $cliente->save();
+        DB::beginTransaction();
+        try{
+            $plano = Planos::find($request->get('plano'));
+            $cliente = new Clientes();
+            $cliente->fill($request->all());
+            $cliente->save();
+
+            $cliente->planos()->attach($plano);
+
+
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json($e->getMessage(), 409);
+        }
 
         return $cliente;
 
@@ -56,7 +72,7 @@ class ClienteController extends Controller
      */
     public function show($id)
     {
-        return Clientes::findOrFail($id);
+        return Clientes::with('planos')->findOrFail($id);
     }
 
     /**
@@ -76,15 +92,28 @@ class ClienteController extends Controller
             'estado' => ['sometimes', 'required', 'string'],
             'cidade' => ['sometimes', 'required', 'string'],
             'data_de_nascimento' => ['sometimes', 'required', 'date_format:d/m/Y'],
+            'plano' => ['sometimes', 'required', 'numeric'],
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors()->toArray(), 422);
         }
 
-        $cliente = Clientes::find($id);
-        $cliente->fill($request->all());
-        $cliente->save();
+        DB::beginTransaction();
+        try{
+            $plano = Planos::find($request->get('plano'));
+
+            $cliente = Clientes::find($id);
+            $cliente->fill($request->all());
+            $cliente->planos()->detach();
+            $cliente->planos()->attach($plano);
+            $cliente->save();
+
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json($e->getMessage(), 409);
+        }
 
         return $cliente;
     }
@@ -97,8 +126,23 @@ class ClienteController extends Controller
      */
     public function destroy($id)
     {
-        $cliente = Clientes::findOrFail($id);
-        $cliente->delete();
+
+        DB::beginTransaction();
+        try {
+            $cliente = Clientes::with('planos')->findOrFail($id);
+    
+            if ($cliente->estado === 'São Paulo' && $cliente->planos[0]->id === 1){
+                throw new Exception('Esse cliente não pode ser excluido');
+            }
+
+            $cliente->planos()->detach();
+            $cliente->delete();
+            DB::commit();
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json($e->getMessage(), 409);
+        }
 
         return response()->json('Cliente Deletado com sucesso', 204);
     }

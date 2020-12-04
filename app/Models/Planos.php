@@ -13,4 +13,9 @@ class Planos extends Model
         'nome',
         'mensalidade',
     ];
+
+    public function clientes()
+    {
+        return $this->belongsToMany(Clientes::class);
+    }
 }

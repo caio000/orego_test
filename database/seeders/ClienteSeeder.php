@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Clientes;
+use App\Models\Planos;
 use Illuminate\Database\Seeder;
 
 class ClienteSeeder extends Seeder
@@ -14,6 +15,7 @@ class ClienteSeeder extends Seeder
      */
     public function run()
     {
+        $plano = Planos::findOrFail(1); // free
         $clientes = [
             [
                 'nome' => 'Claudianus Boast',
@@ -162,7 +164,9 @@ class ClienteSeeder extends Seeder
         ];
 
         foreach ($clientes as $cliente) {
-            (new Clientes($cliente))->save();
+            $model = new Clientes($cliente);
+            $model->save();
+            $model->planos()->attach($plano);
         }
     }
 }
