@@ -71,7 +71,7 @@ class ClienteController extends Controller
         // validação dos dados
         $validator = validator($request->all(), [
             'nome' => ['sometimes', 'required'],
-            'email' => ['sometimes', 'required', 'email', 'unique:clientes,email'],
+            'email' => ['sometimes', 'required', 'email', 'unique:clientes,email,'.$id],
             'telefone' => ['sometimes', 'required', 'regex:/\([0-9]{2}\)[0-9]{4,5}-[0-9]{4}$/'],
             'estado' => ['sometimes', 'required', 'string'],
             'cidade' => ['sometimes', 'required', 'string'],
