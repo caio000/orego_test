@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\PlanoController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -19,3 +20,4 @@ Route::middleware('auth.basic.once')->get('/login', function (Request $request) 
     return $request->user();
 });
 Route::apiResource('cliente', ClienteController::class)->middleware('auth.basic.once');
+Route::apiResource('plano', PlanoController::class)->middleware('auth.basic.once');
